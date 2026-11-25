@@ -72,6 +72,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 .prow{display:flex;gap:8px;margin-top:8px}
 .prow input:first-child{flex:1.3}
 .sec{font-family:Fraunces,serif;font-size:1.1rem;margin:20px 0 10px;color:var(--gold)}
+.gimg{display:block;width:100%;padding:0;border:0;background:var(--card2);border-radius:12px;overflow:hidden;margin-bottom:12px;min-height:90px;cursor:zoom-in}
+.gimg img{display:block;width:100%;max-height:240px;object-fit:cover}
+.gprev{display:none;width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-top:8px}
+dialog.zoom{width:min(900px,96vw)}
+dialog.zoom img{width:100%;border-radius:12px;margin-top:10px}
+input[type=file]{padding:10px}
 .todo{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:.9rem}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 .admin{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
@@ -124,6 +130,10 @@ input,textarea{width:100%;background:var(--card2);color:var(--text);border:1px s
     <input id="gPrice" type="number" min="0" step="0.01" inputmode="decimal">
     <label for="gNote">Précision (taille, couleur…)</label>
     <textarea id="gNote" rows="2" maxlength="200"></textarea>
+    <label for="gFile">Photo ou capture d’écran (facultatif)</label>
+    <input id="gFile" type="file" accept="image/*">
+    <img id="gPreview" class="gprev" alt="Aperçu de l’image">
+    <button class="btn ghost small" type="button" id="gImgRemove" hidden style="margin-top:8px">Retirer l’image</button>
     <div class="dlg-actions">
       <button class="btn ghost" type="button" data-close>Annuler</button>
       <button class="btn" type="submit">Enregistrer</button>
@@ -166,6 +176,11 @@ input,textarea{width:100%;background:var(--card2);color:var(--text);border:1px s
   </form>
 </dialog>
 
+<dialog id="dlgImg" class="zoom">
+  <button class="btn small" type="button" data-close>Fermer</button>
+  <img id="zoomImg" alt="Image agrandie">
+</dialog>
+
 <script>
 /* ===================== CONFIG ===================== */
 // Laisser vide = mode démo (données dans ce navigateur uniquement).
@@ -191,6 +206,38 @@ const myToken = () => { let t = store.get('wl_device', null); if (!t) { t = uid(
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2800); }
 const dayMonth = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 const ageOf = (p, eventDate) => p.birthday ? Number(eventDate.slice(0, 4)) - Number(p.birthday.slice(0, 4)) : p.age;
+const imgCache = new Map();
+const IMG_OK = /^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+/=]+$/;
+async function compressImage(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file); }
+  catch { bmp = await new Promise((ok, ko) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { URL.revokeObjectURL(u); ok(im); }; im.onerror = ko; im.src = u; }); }
+  const w0 = bmp.width, h0 = bmp.height; let scale = Math.min(1, 900 / Math.max(w0, h0));
+  for (let a = 0; a < 5; a++) {
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w0 * scale)); c.height = Math.max(1, Math.round(h0 * scale));
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+    for (const q of [0.78, 0.65, 0.5]) {
+      let u = c.toDataURL('image/webp', q); if (!u.startsWith('data:image/webp')) u = c.toDataURL('image/jpeg', q);
+      if (u.length <= 180000) return u;
+    }
+    scale *= 0.75;
+  }
+  throw new Error('Image trop lourde');
+}
+async function getImg(id) {
+  if (imgCache.has(id)) return imgCache.get(id);
+  try { const v = await api.getImage(id); if (v && IMG_OK.test(v)) { imgCache.set(id, v); return v; } } catch {}
+  return null;
+}
+async function loadImages() {
+  const need = [...new Set([...document.querySelectorAll('.gimg')].filter(b => !b.querySelector('img')).map(b => b.dataset.zoom))];
+  let i = 0;
+  const worker = async () => { while (i < need.length) {
+    const id = need[i++], src = await getImg(id); if (!src) continue;
+    document.querySelectorAll('.gimg').forEach(b => { if (b.dataset.zoom === id && !b.querySelector('img')) { const im = document.createElement('img'); im.alt = 'Illustration de l’idée'; im.src = src; b.appendChild(im); } });
+  } };
+  await Promise.all([worker(), worker(), worker()]);
+}
 const eventLink = (slug, admin) => `${BASE}?e=${encodeURIComponent(slug)}${admin ? '&admin=' + encodeURIComponent(ADMIN) : ''}`;
 
 /* ===================== API : Supabase ===================== */
@@ -211,10 +258,11 @@ const remote = {
   load: () => rpc('wl_get', { p_code: CODE, p_admin: ADMIN, p_token: myToken() }),
   claim: (gift, name, mode, amount) => rpc('wl_claim', { p_code: CODE, p_gift: gift, p_name: name, p_mode: mode, p_token: myToken(), p_amount: amount }),
   unclaim: (id) => rpc('wl_unclaim', { p_code: CODE, p_claim: id, p_token: myToken(), p_admin: ADMIN }),
-  saveGift: (g) => rpc('wl_gift_save', { p_code: CODE, p_admin: ADMIN, p_person: g.person_id, p_gift: g.id || null, p_title: g.title, p_url: g.url || null, p_price: g.price, p_note: g.note || null, p_kind: g.kind }),
+  saveGift: (g) => rpc('wl_gift_save', { p_code: CODE, p_admin: ADMIN, p_person: g.person_id, p_gift: g.id || null, p_title: g.title, p_url: g.url || null, p_price: g.price, p_note: g.note || null, p_kind: g.kind, p_image: g.image || null, p_remove_image: !!g.removeImage }),
   publish: (id) => rpc('wl_gift_publish', { p_code: CODE, p_admin: ADMIN, p_gift: id }),
   delGift: (id) => rpc('wl_gift_delete', { p_code: CODE, p_admin: ADMIN, p_gift: id }),
-  addIdea: (g) => rpc('wl_idea_add', { p_code: CODE, p_person: g.person_id, p_title: g.title, p_url: g.url || null, p_price: g.price, p_note: g.note || null, p_kind: g.kind }),
+  addIdea: (g) => rpc('wl_idea_add', { p_code: CODE, p_person: g.person_id, p_title: g.title, p_url: g.url || null, p_price: g.price, p_note: g.note || null, p_kind: g.kind, p_image: g.image || null }),
+  getImage: (id) => rpc('wl_gift_image', { p_code: CODE, p_admin: ADMIN, p_gift: id }),
   removeIdea: (id) => rpc('wl_idea_remove', { p_code: CODE, p_gift: id }),
   adminEvents: () => rpc('wl_admin_events', { p_admin: ADMIN }),
   createEvent: (e) => rpc('wl_event_create', { p_admin: ADMIN, p_title: e.title, p_date: e.date, p_people: e.people }),
@@ -250,7 +298,7 @@ const demo = {
     const d = this.db(), e = this.ev(d), tk = myToken(); if (!e) return null;
     const role = ADMIN ? 'admin' : (e.kids_slug === CODE ? 'kids' : 'family');
     const gifts = e.gifts.filter(g => role !== 'family' || g.status === 'published')
-      .map(g => ({ ...g, collected: role === 'kids' ? null : sum(e.claims.filter(c => c.gift_id === g.id)) }));
+      .map(g => ({ ...g, image: undefined, has_image: !!g.image, collected: role === 'kids' ? null : sum(e.claims.filter(c => c.gift_id === g.id)) }));
     const ids = new Set(gifts.filter(g => role === 'admin' || g.status === 'published').map(g => g.id));
     const claims = role === 'kids' ? [] : e.claims.filter(c => ids.has(c.gift_id)).map(c => ({
       id: c.id, gift_id: c.gift_id, mode: c.mode, mine: c.token === tk,
@@ -269,12 +317,13 @@ const demo = {
   async unclaim(id) { const d = this.db(), e = this.ev(d), tk = myToken(); e.claims = e.claims.filter(c => !(c.id === id && (c.token === tk || ADMIN))); this.save(d); },
   async saveGift(g) {
     const d = this.db(), e = this.ev(d);
-    if (g.id) Object.assign(e.gifts.find(x => x.id === g.id) || {}, { title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind });
-    else e.gifts.push({ id: uid(), person_id: g.person_id, title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, status: 'published' });
+    if (g.id) Object.assign(e.gifts.find(x => x.id === g.id) || {}, { title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, ...(g.image ? { image: g.image } : g.removeImage ? { image: null } : {}) });
+    else e.gifts.push({ id: uid(), person_id: g.person_id, title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, image: g.image || null, status: 'published' });
     this.save(d);
   },
-  async addIdea(g) { const d = this.db(), e = this.ev(d); e.gifts.push({ id: uid(), person_id: g.person_id, title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, status: 'pending' }); this.save(d); },
+  async addIdea(g) { const d = this.db(), e = this.ev(d); e.gifts.push({ id: uid(), person_id: g.person_id, title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, image: g.image || null, status: 'pending' }); this.save(d); },
   async removeIdea(id) { const d = this.db(), e = this.ev(d); e.gifts = e.gifts.filter(g => !(g.id === id && g.status === 'pending')); this.save(d); },
+  async getImage(id) { const e = this.ev(this.db()); return e.gifts.find(g => g.id === id)?.image || null; },
   async publish(id) { const d = this.db(), e = this.ev(d); const g = e.gifts.find(x => x.id === id); if (g) g.status = 'published'; this.save(d); },
   async delGift(id) { const d = this.db(), e = this.ev(d); e.gifts = e.gifts.filter(g => g.id !== id); e.claims = e.claims.filter(c => c.gift_id !== id); this.save(d); },
   async adminEvents() {
@@ -375,6 +424,7 @@ function render() {
       const href = safeUrl(g.url);
       const chip = c => `<span class="who">${esc(c.name)}${c.amount != null ? ' · ' + esc(euro(Number(c.amount))) : ''}${(c.mine || isAdmin) ? `<button data-unclaim="${esc(c.id)}" aria-label="Annuler la réservation de ${esc(c.name)}">✕</button>` : ''}</span>`;
       h += `<article class="gift ${full ? 'taken' : ''} ${isPend ? 'pend' : ''}">`;
+      if (g.has_image) h += `<button class="gimg" data-zoom="${esc(g.id)}" aria-label="Agrandir l’image">${imgCache.has(g.id) ? `<img src="${esc(imgCache.get(g.id))}" alt="Illustration de l’idée">` : ''}</button>`;
       if (isIdea || isPend) h += `<div class="status" style="margin:0 0 8px">${isIdea ? '<span class="badge b-idea">💡 Idée libre</span>' : ''}${isPend ? '<span class="badge b-pend">En attente de validation</span>' : ''}</div>`;
       h += `<div class="row"><h3>${esc(g.title)}</h3>${price != null ? `<span class="price">${isIdea ? '≈ ' : ''}${esc(euro(price))}</span>` : ''}</div>`;
       if (g.note) h += `<div class="note">${esc(g.note)}</div>`;
@@ -420,6 +470,7 @@ function render() {
       <p class="note">Ne partage jamais l’adresse avec <code>&amp;admin=</code> : c’est la tienne.</p></section>`;
   }
   $('#app').innerHTML = h;
+  loadImages();
 }
 
 /* ===================== ACTIONS ===================== */
@@ -442,6 +493,8 @@ document.addEventListener('click', async e => {
   const t = e.target.closest('button'); if (!t) return;
   const d = t.dataset;
   if (d.close !== undefined) { t.closest('dialog').close(); return; }
+  if (d.zoom) { const src = imgCache.get(d.zoom); if (src) { $('#zoomImg').src = src; $('#dlgImg').showModal(); } return; }
+  if (t.id === 'gImgRemove') { gImg = { data: null, remove: true }; showPreview(null); return; }
   if (d.tab) { activePerson = d.tab; render(); return; }
   if (d.claim) {
     pending = { gift: d.claim, mode: d.mode };
@@ -466,7 +519,10 @@ document.addEventListener('click', async e => {
     $('#gTitle').value = g?.title || ''; $('#gUrl').value = g?.url || ''; $('#gPrice').value = g?.price ?? ''; $('#gNote').value = g?.note || '';
     $('#gKind').checked = g?.kind === 'idea';
     $('#gPriceLabel').textContent = $('#gKind').checked ? 'Budget approximatif en € (facultatif)' : 'Prix approximatif en € (facultatif)';
-    $('#dlgGift').showModal(); return;
+    gImg = { data: null, remove: false }; $('#gFile').value = ''; showPreview(null);
+    $('#dlgGift').showModal();
+    if (g?.has_image) getImg(g.id).then(src => { if (src && !gImg.data && !gImg.remove) showPreview(src); });
+    return;
   }
   if (d.publish) { try { await api.publish(d.publish); await refresh(); toast('Publié pour la famille'); } catch (err) { toast(err.message); } return; }
   if (d.rmidea) { try { await api.removeIdea(d.rmidea); await refresh(); toast('Idée retirée'); } catch (err) { toast(err.message); } return; }
@@ -501,6 +557,22 @@ document.addEventListener('click', async e => {
   }
 });
 
+let gImg = { data: null, remove: false };
+function showPreview(src) {
+  const p = $('#gPreview');
+  if (src) { p.src = src; p.style.display = 'block'; } else { p.removeAttribute('src'); p.style.display = 'none'; }
+  $('#gImgRemove').hidden = !src;
+}
+async function setImageFromFile(f) {
+  try { const u = await compressImage(f); gImg = { data: u, remove: false }; showPreview(u); }
+  catch { toast('Image illisible ou trop lourde'); $('#gFile').value = ''; }
+}
+$('#gFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) setImageFromFile(f); });
+document.addEventListener('paste', e => {
+  if (!$('#dlgGift').open) return;
+  const f = [...(e.clipboardData?.files || [])].find(x => x.type.startsWith('image/'));
+  if (f) { e.preventDefault(); setImageFromFile(f); }
+});
 $('#gKind').addEventListener('change', () => {
   $('#gPriceLabel').textContent = $('#gKind').checked ? 'Budget approximatif en € (facultatif)' : 'Prix approximatif en € (facultatif)';
 });
@@ -519,7 +591,8 @@ $('#fClaim').addEventListener('submit', async e => {
 $('#fGift').addEventListener('submit', async e => {
   e.preventDefault();
   const price = $('#gPrice').value === '' ? null : Number($('#gPrice').value);
-  const g = { id: pending.gift, person_id: pending.person, title: $('#gTitle').value.trim(), url: $('#gUrl').value.trim(), price, note: $('#gNote').value.trim(), kind: $('#gKind').checked ? 'idea' : 'article' };
+  const g = { id: pending.gift, person_id: pending.person, title: $('#gTitle').value.trim(), url: $('#gUrl').value.trim(), price, note: $('#gNote').value.trim(), kind: $('#gKind').checked ? 'idea' : 'article', image: gImg.data, removeImage: gImg.remove };
+  if (g.id) imgCache.delete(g.id);
   try {
     if (S.role === 'kids') { await api.addIdea(g); $('#dlgGift').close(); await refresh(); toast('Idée envoyée, elle sera validée avant publication'); }
     else { await api.saveGift(g); $('#dlgGift').close(); await refresh(); toast('Enregistré'); }
