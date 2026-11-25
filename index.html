@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1226">
+<meta name="robots" content="noindex, nofollow">
+<title>Liste de cadeaux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1226; --card:#171b3a; --card2:#1e2349; --line:#2a3066;
+  --text:#f4f1ea; --muted:#a6a9c9; --gold:#f5c451; --ok:#4ade80; --warn:#fbbf24;
+  --c:#f5c451; --radius:18px;
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:Inter,system-ui,sans-serif;color:var(--text);min-height:100vh;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(245,196,81,.10) 0 2px,transparent 3px) 0 0/90px 90px,
+    radial-gradient(circle at 70% 60%,rgba(251,113,133,.10) 0 2px,transparent 3px) 0 0/130px 130px,
+    radial-gradient(900px 500px at 50% -10%,#232a6b 0%,transparent 70%),
+    var(--bg);
+  padding:env(safe-area-inset-top) 0 calc(40px + env(safe-area-inset-bottom));
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px}
+header{padding:32px 0 18px;text-align:center}
+.kicker{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
+h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:clamp(1.8rem,7vw,2.6rem);line-height:1.1;margin:8px 0 12px}
+.meta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.pill{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:6px 14px;font-size:.88rem;color:var(--muted)}
+.pill b{color:var(--text)}
+.notice{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:12px 14px;color:var(--muted);font-size:.9rem;margin:14px 0}
+.tabs{display:flex;gap:8px;margin:18px 0 14px;position:sticky;top:0;z-index:5;padding:8px 0;background:linear-gradient(var(--bg) 70%,transparent)}
+.tab{flex:1;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;padding:12px 8px;font:600 1rem Inter,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab small{font-weight:500;color:var(--muted);font-size:.78rem}
+.tab[aria-selected=true]{background:var(--c);border-color:var(--c);color:#10142e}
+.tab[aria-selected=true] small{color:#10142e;opacity:.75}
+.gift{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.gift.taken{opacity:.72}
+.gift h3{font-size:1.08rem;font-weight:600;line-height:1.3}
+.row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.price{font-family:Fraunces,serif;font-weight:800;color:var(--c);white-space:nowrap}
+.note{color:var(--muted);font-size:.9rem;margin-top:6px}
+.link{display:inline-block;margin-top:8px;color:var(--gold);font-size:.9rem;text-decoration:none;border-bottom:1px solid rgba(245,196,81,.4)}
+.status{margin-top:12px;font-size:.9rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.badge{border-radius:99px;padding:4px 11px;font-size:.8rem;font-weight:600}
+.b-free{background:rgba(74,222,128,.14);color:var(--ok)}
+.b-full{background:rgba(251,113,133,.16);color:#fda4af}
+.b-share{background:rgba(251,191,36,.15);color:var(--warn)}
+.who{display:inline-flex;gap:4px;align-items:center;background:var(--card2);border-radius:99px;padding:3px 6px 3px 11px;font-size:.85rem}
+.who button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px;border-radius:50%}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:11px 16px;font:600 .95rem Inter,sans-serif;cursor:pointer;min-height:44px;color:#10142e;background:var(--c)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.small{padding:8px 12px;min-height:38px;font-size:.85rem}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.bar{height:8px;border-radius:99px;background:var(--card2);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--c);border-radius:99px}
+.prog{font-size:.85rem;color:var(--muted);margin-top:6px}
+.b-idea{background:rgba(167,139,250,.16);color:#c4b5fd}
+.b-pend{background:rgba(148,163,184,.18);color:#cbd5e1}
+.gift.pend{border-style:dashed}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:12px;color:var(--text);font-size:.92rem}
+.chk input{width:22px;height:22px;flex:none;margin-top:1px;accent-color:var(--gold)}
+.tabs{overflow-x:auto;scrollbar-width:none}
+.tab{flex:1 0 auto;min-width:112px}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.prow{display:flex;gap:8px;margin-top:8px}
+.prow input:first-child{flex:1.3}
+.sec{font-family:Fraunces,serif;font-size:1.1rem;margin:20px 0 10px;color:var(--gold)}
+.todo{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:.9rem}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.admin{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.admin h2{font-family:Fraunces,serif;font-size:1.2rem;margin-bottom:10px}
+.copy{display:flex;gap:8px;margin-top:8px;align-items:center}
+.copy span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:.85rem;background:var(--card2);padding:10px;border-radius:10px}
+dialog{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:20px;padding:20px;width:min(440px,calc(100vw - 28px))}
+dialog::backdrop{background:rgba(5,7,20,.7)}
+dialog h2{font-family:Fraunces,serif;font-size:1.3rem;margin-bottom:6px}
+dialog p{color:var(--muted);font-size:.9rem;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
+input,textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:1rem Inter,sans-serif}
+.dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,30px);background:var(--text);color:#10142e;padding:12px 18px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90vw}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="empty">Chargement…</div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlgClaim">
+  <form method="dialog" id="fClaim">
+    <h2 id="claimTitle"></h2>
+    <p id="claimHelp"></p>
+    <label for="claimName">Ton prénom</label>
+    <input id="claimName" required maxlength="40" autocomplete="given-name">
+    <div id="amountWrap" hidden>
+      <label for="claimAmount">Ta participation en € (facultatif)</label>
+      <input id="claimAmount" type="number" min="1" step="0.01" inputmode="decimal">
+      <p id="amountHelp" style="margin:6px 0 0"></p>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn ghost" type="button" data-close>Annuler</button>
+      <button class="btn" type="submit">Valider</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgGift">
+  <form method="dialog" id="fGift">
+    <h2 id="giftTitle">Cadeau</h2>
+    <label for="gTitle">Nom du cadeau ou de l’idée</label>
+    <input id="gTitle" required maxlength="120">
+    <label class="chk"><input type="checkbox" id="gKind"><span>Idée libre : pas d’article précis, la personne qui offre choisit (ex. « quelque chose pour la musique »)</span></label>
+    <label for="gUrl">Lien (facultatif)</label>
+    <input id="gUrl" type="url" inputmode="url" placeholder="https://…">
+    <label for="gPrice" id="gPriceLabel">Prix approximatif en € (facultatif)</label>
+    <input id="gPrice" type="number" min="0" step="0.01" inputmode="decimal">
+    <label for="gNote">Précision (taille, couleur…)</label>
+    <textarea id="gNote" rows="2" maxlength="200"></textarea>
+    <div class="dlg-actions">
+      <button class="btn ghost" type="button" data-close>Annuler</button>
+      <button class="btn" type="submit">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgEvent">
+  <form method="dialog" id="fEvent">
+    <h2 id="evDlgTitle">Événement</h2>
+    <label for="eTitle">Titre</label>
+    <input id="eTitle" required maxlength="120" placeholder="Anniversaire de Camille">
+    <label for="eDate">Date de la fête</label>
+    <input id="eDate" type="date" required>
+    <div id="ePeopleWrap">
+      <label>Qui est fêté ? (prénom et date de naissance)</label>
+      <div id="ePeople"></div>
+      <button class="btn ghost small" type="button" id="eAddRow" style="margin-top:8px">+ Ajouter une personne</button>
+    </div>
+    <label class="chk" id="eNamesWrap" hidden><input type="checkbox" id="eShowNames"><span>Montrer les prénoms des participants à la famille (les montants restent privés)</span></label>
+    <div class="dlg-actions">
+      <button class="btn ghost" type="button" data-close>Annuler</button>
+      <button class="btn" type="submit">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgPerson">
+  <form method="dialog" id="fPerson">
+    <h2 id="pDlgTitle">Personne</h2>
+    <label for="pName">Prénom</label>
+    <input id="pName" required maxlength="40">
+    <label for="pBirthday">Date de naissance</label>
+    <input id="pBirthday" type="date">
+    <div class="dlg-actions">
+      <button class="btn ghost" type="button" id="pDelete" hidden>Supprimer</button>
+      <button class="btn ghost" type="button" data-close>Annuler</button>
+      <button class="btn" type="submit">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ===================== CONFIG ===================== */
+// Laisser vide = mode démo (données dans ce navigateur uniquement).
+const CONFIG = { SUPABASE_URL: 'https://kxvsgduiwtyrzpsdoznf.supabase.co', SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4dnNnZHVpd3R5cnpwc2Rvem5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwOTIxODcsImV4cCI6MjEwNzY2ODE4N30.d8E7DgyrPLrjwbGX67DSnzsYiWE-m0UVrmrTFR4o6kY' };
+
+/* ===================== OUTILS ===================== */
+const $ = (s, r = document) => r.querySelector(s);
+const params = new URLSearchParams(location.search);
+const CODE = params.get('e') || 'demo';
+const ADMIN = params.get('admin');
+const HUB = !!ADMIN && !params.get('e');          // ?admin=CLE sans &e= : liste des événements
+const DEMO = !CONFIG.SUPABASE_URL;
+const BASE = location.origin + location.pathname;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeUrl = u => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch { return ''; } };
+const euro = n => n == null ? '' : new Intl.NumberFormat('fr-FR', { style:'currency', currency:'EUR', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+const myToken = () => { let t = store.get('wl_device', null); if (!t) { t = uid().replace(/-/g, ''); store.set('wl_device', t); } return t; };
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2800); }
+const dayMonth = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const ageOf = (p, eventDate) => p.birthday ? Number(eventDate.slice(0, 4)) - Number(p.birthday.slice(0, 4)) : p.age;
+const eventLink = (slug, admin) => `${BASE}?e=${encodeURIComponent(slug)}${admin ? '&admin=' + encodeURIComponent(ADMIN) : ''}`;
+
+/* ===================== API : Supabase ===================== */
+async function rpc(fn, args) {
+  const r = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: { apikey: CONFIG.SUPABASE_ANON_KEY, Authorization: `Bearer ${CONFIG.SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args)
+  });
+  if (!r.ok) {
+    let m = 'Erreur réseau'; try { m = (await r.json()).message || m; } catch {}
+    throw new Error(m);
+  }
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+const remote = {
+  load: () => rpc('wl_get', { p_code: CODE, p_admin: ADMIN, p_token: myToken() }),
+  claim: (gift, name, mode, amount) => rpc('wl_claim', { p_code: CODE, p_gift: gift, p_name: name, p_mode: mode, p_token: myToken(), p_amount: amount }),
+  unclaim: (id) => rpc('wl_unclaim', { p_code: CODE, p_claim: id, p_token: myToken(), p_admin: ADMIN }),
+  saveGift: (g) => rpc('wl_gift_save', { p_code: CODE, p_admin: ADMIN, p_person: g.person_id, p_gift: g.id || null, p_title: g.title, p_url: g.url || null, p_price: g.price, p_note: g.note || null, p_kind: g.kind }),
+  publish: (id) => rpc('wl_gift_publish', { p_code: CODE, p_admin: ADMIN, p_gift: id }),
+  delGift: (id) => rpc('wl_gift_delete', { p_code: CODE, p_admin: ADMIN, p_gift: id }),
+  addIdea: (g) => rpc('wl_idea_add', { p_code: CODE, p_person: g.person_id, p_title: g.title, p_url: g.url || null, p_price: g.price, p_note: g.note || null, p_kind: g.kind }),
+  removeIdea: (id) => rpc('wl_idea_remove', { p_code: CODE, p_gift: id }),
+  adminEvents: () => rpc('wl_admin_events', { p_admin: ADMIN }),
+  createEvent: (e) => rpc('wl_event_create', { p_admin: ADMIN, p_title: e.title, p_date: e.date, p_people: e.people }),
+  updateEvent: (e) => rpc('wl_event_update', { p_code: CODE, p_admin: ADMIN, p_title: e.title, p_date: e.date, p_show_names: e.show_names }),
+  deleteEvent: () => rpc('wl_event_delete', { p_code: CODE, p_admin: ADMIN }),
+  savePerson: (p) => rpc('wl_person_save', { p_code: CODE, p_admin: ADMIN, p_person: p.id || null, p_name: p.name, p_birthday: p.birthday || null }),
+  deletePerson: (id) => rpc('wl_person_delete', { p_code: CODE, p_admin: ADMIN, p_person: id })
+};
+
+/* ===================== API : démo (localStorage) ===================== */
+const sum = (cl) => cl.reduce((s, c) => s + (c.amount || 0), 0);
+const PALETTE = ['#2dd4bf', '#fb7185', '#a78bfa', '#fbbf24', '#60a5fa', '#34d399'];
+const demo = {
+  db() {
+    let d = store.get('wl_demo3', null);
+    if (!d) {
+      d = { events: [{
+        slug: 'demo', kids_slug: 'demo-kids', title: 'Anniversaire de Alex & Sam (démo)', date: '2026-12-19', show_names: true,
+        people: [{ id: 'p1', name: 'Alex', age: 18, birthday: null, color: PALETTE[0] }, { id: 'p2', name: 'Sam', age: 15, birthday: null, color: PALETTE[1] }],
+        gifts: [
+          { id: 'g1', person_id: 'p1', title: 'Casque audio (exemple)', url: 'https://example.com', price: 120, note: 'Sans fil, noir', kind: 'article', status: 'published' },
+          { id: 'g2', person_id: 'p1', title: 'Quelque chose pour la musique (exemple)', url: '', price: 50, note: 'Au choix', kind: 'idea', status: 'published' },
+          { id: 'g3', person_id: 'p2', title: 'Figurine (exemple)', url: '', price: 45, note: '', kind: 'article', status: 'published' }
+        ],
+        claims: [] }] };
+      store.set('wl_demo3', d);
+    }
+    return d;
+  },
+  ev(d) { return d.events.find(e => e.slug === CODE || e.kids_slug === CODE); },
+  save(d) { store.set('wl_demo3', d); },
+  async load() {
+    const d = this.db(), e = this.ev(d), tk = myToken(); if (!e) return null;
+    const role = ADMIN ? 'admin' : (e.kids_slug === CODE ? 'kids' : 'family');
+    const gifts = e.gifts.filter(g => role !== 'family' || g.status === 'published')
+      .map(g => ({ ...g, collected: role === 'kids' ? null : sum(e.claims.filter(c => c.gift_id === g.id)) }));
+    const ids = new Set(gifts.filter(g => role === 'admin' || g.status === 'published').map(g => g.id));
+    const claims = role === 'kids' ? [] : e.claims.filter(c => ids.has(c.gift_id)).map(c => ({
+      id: c.id, gift_id: c.gift_id, mode: c.mode, mine: c.token === tk,
+      name: (role === 'admin' || e.show_names || c.token === tk) ? c.name : 'Un proche',
+      amount: (role === 'admin' || c.token === tk) ? c.amount : null }));
+    return { role, event: { title: e.title, date: e.date, show_names: e.show_names }, people: e.people, gifts, claims,
+             links: role === 'admin' ? { family: e.slug, kids: e.kids_slug } : null };
+  },
+  async claim(gift, name, mode, amount) {
+    const d = this.db(), e = this.ev(d), g = e.gifts.find(x => x.id === gift); const cl = e.claims.filter(c => c.gift_id === gift);
+    if (cl.some(c => c.mode === 'full')) throw new Error('Ce cadeau est déjà pris');
+    if (mode === 'full' && cl.length) throw new Error('Une cagnotte existe déjà pour ce cadeau');
+    if (mode === 'share' && g.price != null && sum(cl) >= g.price) throw new Error('La cagnotte est déjà complète');
+    e.claims.push({ id: uid(), gift_id: gift, name, mode, token: myToken(), amount: mode === 'share' ? amount : null }); this.save(d);
+  },
+  async unclaim(id) { const d = this.db(), e = this.ev(d), tk = myToken(); e.claims = e.claims.filter(c => !(c.id === id && (c.token === tk || ADMIN))); this.save(d); },
+  async saveGift(g) {
+    const d = this.db(), e = this.ev(d);
+    if (g.id) Object.assign(e.gifts.find(x => x.id === g.id) || {}, { title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind });
+    else e.gifts.push({ id: uid(), person_id: g.person_id, title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, status: 'published' });
+    this.save(d);
+  },
+  async addIdea(g) { const d = this.db(), e = this.ev(d); e.gifts.push({ id: uid(), person_id: g.person_id, title: g.title, url: g.url, price: g.price, note: g.note, kind: g.kind, status: 'pending' }); this.save(d); },
+  async removeIdea(id) { const d = this.db(), e = this.ev(d); e.gifts = e.gifts.filter(g => !(g.id === id && g.status === 'pending')); this.save(d); },
+  async publish(id) { const d = this.db(), e = this.ev(d); const g = e.gifts.find(x => x.id === id); if (g) g.status = 'published'; this.save(d); },
+  async delGift(id) { const d = this.db(), e = this.ev(d); e.gifts = e.gifts.filter(g => g.id !== id); e.claims = e.claims.filter(c => c.gift_id !== id); this.save(d); },
+  async adminEvents() {
+    return this.db().events.map(e => ({ slug: e.slug, kids_slug: e.kids_slug, title: e.title, date: e.date, people: e.people.map(p => p.name), pending: e.gifts.filter(g => g.status === 'pending').length }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  },
+  async createEvent(x) {
+    const d = this.db(), r = uid().slice(0, 8);
+    d.events.push({ slug: 'demo-' + r, kids_slug: 'demo-k-' + r, title: x.title, date: x.date, show_names: true, gifts: [], claims: [],
+      people: x.people.filter(p => p.name.trim()).map((p, i) => ({ id: uid(), name: p.name.trim(), birthday: p.birthday || null, color: PALETTE[i % 6] })) });
+    this.save(d); return 'demo-' + r;
+  },
+  async updateEvent(x) { const d = this.db(), e = this.ev(d); e.title = x.title; e.date = x.date || e.date; e.show_names = x.show_names; this.save(d); },
+  async deleteEvent() {
+    const d = this.db(); if (d.events.length <= 1) throw new Error('Garde au moins un événement : ta clé organisateur en dépend');
+    d.events = d.events.filter(e => e.slug !== CODE && e.kids_slug !== CODE); this.save(d);
+  },
+  async savePerson(p) {
+    const d = this.db(), e = this.ev(d);
+    if (p.id) Object.assign(e.people.find(x => x.id === p.id) || {}, { name: p.name, birthday: p.birthday || null });
+    else { if (e.people.length >= 6) throw new Error('6 personnes maximum par événement'); e.people.push({ id: uid(), name: p.name, birthday: p.birthday || null, color: PALETTE[e.people.length % 6] }); }
+    this.save(d);
+  },
+  async deletePerson(id) { const d = this.db(), e = this.ev(d); e.people = e.people.filter(p => p.id !== id); const ids = e.gifts.filter(g => g.person_id === id).map(g => g.id); e.gifts = e.gifts.filter(g => g.person_id !== id); e.claims = e.claims.filter(c => !ids.includes(c.gift_id)); this.save(d); }
+};
+const api = DEMO ? demo : remote;
+
+/* ===================== ÉTAT ===================== */
+let S = null;              // données chargées
+let activePerson = null;   // id onglet
+
+async function refresh(silent) {
+  try {
+    if (HUB) { S = { hub: true, events: await api.adminEvents() }; render(); return; }
+    const d = await api.load();
+    if (!d) { $('#app').innerHTML = '<div class="empty">Lien invalide ou expiré.<br>Demande-le à l’organisateur.</div>'; return; }
+    S = d; if (!activePerson || !S.people.some(p => p.id === activePerson)) activePerson = S.people[0]?.id;
+    render();
+  } catch (e) { if (!silent) $('#app').innerHTML = `<div class="empty">Impossible de charger la liste.<br><small>${esc(e.message)}</small></div>`; else toast(e.message); }
+}
+
+/* ===================== RENDU ===================== */
+function countdown(dateStr) {
+  const days = Math.ceil((new Date(dateStr + 'T12:00:00') - new Date()) / 86400000);
+  return days > 0 ? `J-${days}` : days === 0 ? 'C’est aujourd’hui !' : 'Terminé';
+}
+function giftState(g, claims) {
+  const cl = claims.filter(c => c.gift_id === g.id);
+  const price = g.price != null ? Number(g.price) : null, collected = Number(g.collected || 0);
+  return { cl, full: cl.find(c => c.mode === 'full'), shares: cl.filter(c => c.mode === 'share'), price, collected,
+           remaining: price != null ? Math.max(0, price - collected) : null,
+           complete: price != null && collected > 0 && collected >= price };
+}
+function renderHub() {
+  const today = new Date().toISOString().slice(0, 10);
+  const up = S.events.filter(e => e.date >= today), past = S.events.filter(e => e.date < today).reverse();
+  let h = `<header><div class="kicker">Espace organisateur</div><h1>Mes événements</h1></header>`;
+  if (!S.events.length) h += `<div class="empty">Clé organisateur invalide ou aucun événement.</div>`;
+  const card = e => `<article class="gift" style="--c:var(--gold)"><div class="row"><h3>${esc(e.title)}</h3><span class="price">${esc(countdown(e.date))}</span></div>
+    <div class="note">${esc(new Date(e.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))} · ${esc(e.people.join(', '))}</div>
+    ${e.pending ? `<div class="status"><span class="badge b-pend">${e.pending} idée${e.pending > 1 ? 's' : ''} à valider</span></div>` : ''}
+    <div class="actions"><a class="btn small" href="${esc(eventLink(e.slug, true))}">Ouvrir</a>
+      <button class="btn ghost small" data-copy="${esc(eventLink(e.slug))}">Lien famille</button>
+      <button class="btn ghost small" data-copy="${esc(eventLink(e.kids_slug))}">Lien ${esc(e.people.length > 1 ? 'des fêtés' : (e.people[0] || 'fêté'))}</button></div></article>`;
+  if (up.length) h += `<h2 class="sec">À venir</h2>` + up.map(card).join('');
+  if (past.length) h += `<h2 class="sec">Passés</h2>` + past.map(card).join('');
+  h += `<button class="btn" data-newevent style="--c:var(--gold)">+ Nouvel événement</button>`;
+  $('#app').innerHTML = h;
+}
+function render() {
+  if (S.hub) return renderHub();
+  const { role, event, people, gifts, claims } = S;
+  const isAdmin = role === 'admin', isKids = role === 'kids', canClaim = !isKids;
+  const person = people.find(p => p.id === activePerson);
+  const dateTxt = new Date(event.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const pendingN = gifts.filter(g => g.status === 'pending').length;
+  const bdays = people.filter(p => p.birthday).map(p => `${esc(p.name)} ${esc(dayMonth(p.birthday))}`).join(' · ');
+
+  let h = '';
+  if (isAdmin) h += `<p style="padding-top:14px"><a class="link" href="${esc(BASE + '?admin=' + encodeURIComponent(ADMIN))}">← Mes événements</a></p>`;
+  h += `<header><div class="kicker">On fête ça !</div><h1>${esc(event.title)}</h1>
+    <div class="meta"><span class="pill"><b>${esc(dateTxt)}</b></span><span class="pill">${esc(countdown(event.date))}</span>${bdays ? `<span class="pill">🎂 ${bdays}</span>` : ''}</div></header>`;
+  if (isKids) h += `<div class="notice">Ajoute tes idées avec <b>« Proposer une idée »</b> : tu peux donner un article précis ou juste une envie. Elles apparaissent à la famille une fois validées. Tu ne vois pas les réservations, la surprise est préservée 🎁</div>`;
+  else if (!isAdmin) h += `<div class="notice">Choisis un cadeau : <b>« Je l’offre »</b> pour le prendre seul, ou <b>« Je participe »</b> pour le partager avec d’autres. Ton montant reste privé : seul l’organisateur le voit.</div>`;
+
+  h += `<div class="tabs" role="tablist">${people.map(p => {
+    const n = gifts.filter(g => g.person_id === p.id).length, age = ageOf(p, event.date);
+    return `<button class="tab" role="tab" aria-selected="${p.id === activePerson}" data-tab="${esc(p.id)}" style="--c:${esc(p.color)}">${esc(p.name)}<small>${age ? age + ' ans · ' : ''}${n} idée${n > 1 ? 's' : ''}</small></button>`;
+  }).join('')}</div>`;
+
+  if (person) {
+    h += `<div style="--c:${esc(person.color)}">`;
+    const list = gifts.filter(g => g.person_id === person.id);
+    if (!list.length) h += `<div class="empty">Pas encore d’idée pour ${esc(person.name)}.</div>`;
+    for (const g of list) {
+      const { full, shares, price, collected, remaining, complete } = giftState(g, claims);
+      const isPend = g.status === 'pending', isIdea = g.kind === 'idea';
+      const href = safeUrl(g.url);
+      const chip = c => `<span class="who">${esc(c.name)}${c.amount != null ? ' · ' + esc(euro(Number(c.amount))) : ''}${(c.mine || isAdmin) ? `<button data-unclaim="${esc(c.id)}" aria-label="Annuler la réservation de ${esc(c.name)}">✕</button>` : ''}</span>`;
+      h += `<article class="gift ${full ? 'taken' : ''} ${isPend ? 'pend' : ''}">`;
+      if (isIdea || isPend) h += `<div class="status" style="margin:0 0 8px">${isIdea ? '<span class="badge b-idea">💡 Idée libre</span>' : ''}${isPend ? '<span class="badge b-pend">En attente de validation</span>' : ''}</div>`;
+      h += `<div class="row"><h3>${esc(g.title)}</h3>${price != null ? `<span class="price">${isIdea ? '≈ ' : ''}${esc(euro(price))}</span>` : ''}</div>`;
+      if (g.note) h += `<div class="note">${esc(g.note)}</div>`;
+      if (href) h += `<a class="link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Voir le produit ↗</a>`;
+      if (canClaim && !isPend) {
+        h += `<div class="status">`;
+        if (full) h += `<span class="badge b-full">Pris par</span>${chip(full)}`;
+        else if (shares.length) h += `<span class="badge ${complete ? 'b-free' : 'b-share'}">${complete ? 'Cagnotte complète ✓' : 'Cagnotte'}</span>${shares.map(chip).join('')}`;
+        else h += `<span class="badge b-free">Encore libre</span>`;
+        h += `</div>`;
+        if (price != null && shares.length && collected > 0) {
+          h += `<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${price}" aria-valuenow="${Math.min(collected, price)}"><i style="width:${Math.min(100, collected / price * 100)}%"></i></div>
+                <div class="prog">${esc(euro(collected))} réunis sur ${esc(euro(price))}${remaining > 0 ? ` · il manque ${esc(euro(remaining))}` : ''}</div>`;
+        }
+        if (!full) {
+          h += `<div class="actions">`;
+          if (!shares.length) h += `<button class="btn" data-claim="${esc(g.id)}" data-mode="full">${isIdea ? 'Je m’en occupe' : 'Je l’offre'}</button>`;
+          if (!complete) h += `<button class="btn ${shares.length ? '' : 'ghost'}" data-claim="${esc(g.id)}" data-mode="share">${shares.length ? 'Je me joins à la cagnotte' : 'Je participe'}</button>`;
+          if (isAdmin && shares.length && remaining > 0 && collected > 0) h += `<button class="btn ghost" data-claim="${esc(g.id)}" data-mode="share" data-topup="${remaining}">Compléter (${esc(euro(remaining))})</button>`;
+          h += `</div>`;
+        }
+      }
+      if (isAdmin) h += `<div class="actions">${isPend ? `<button class="btn small" data-publish="${esc(g.id)}">Publier</button>` : ''}<button class="btn ghost small" data-edit="${esc(g.id)}">Modifier</button><button class="btn ghost small" data-del="${esc(g.id)}">Supprimer</button></div>`;
+      if (isKids && isPend) h += `<div class="actions"><button class="btn ghost small" data-rmidea="${esc(g.id)}">Retirer</button></div>`;
+      h += `</article>`;
+    }
+    if (isAdmin) h += `<button class="btn" data-add="${esc(person.id)}">+ Ajouter une idée pour ${esc(person.name)}</button>
+      <div class="actions"><button class="btn ghost small" data-editperson="${esc(person.id)}">Fiche de ${esc(person.name)}</button></div>`;
+    if (isKids) h += `<button class="btn" data-add="${esc(person.id)}">+ Proposer une idée pour ${esc(person.name)}</button>`;
+    h += `</div>`;
+  }
+
+  if (isAdmin && S.links) {
+    const short = gifts.filter(g => g.status === 'published').map(g => ({ g, s: giftState(g, claims) }))
+      .filter(x => x.s.shares.length && x.s.remaining > 0 && x.s.collected > 0);
+    h += `<section class="admin"><h2>Pour toi</h2>`;
+    h += pendingN ? `<p class="note" style="margin:0 0 8px">⏳ ${pendingN} idée${pendingN > 1 ? 's' : ''} à valider (bouton « Publier » sur la carte).</p>` : `<p class="note" style="margin:0 0 8px">Aucune idée en attente.</p>`;
+    h += short.length ? `<p class="note" style="margin:0">Cagnottes à compléter, ou non :</p><ul class="todo">${short.map(x => `<li>${esc(x.g.title)} : il manque ${esc(euro(x.s.remaining))}</li>`).join('')}</ul>` : '';
+    h += `<div class="actions"><button class="btn ghost small" data-editevent>Modifier l’événement</button><button class="btn ghost small" data-addperson>+ Ajouter une personne</button><button class="btn ghost small" data-delevent>Supprimer l’événement</button></div>
+      <h2 style="margin-top:18px">Liens à partager</h2>
+      <label>Famille (avec réservations)</label><div class="copy"><span>${esc(eventLink(S.links.family))}</span><button class="btn small" data-copy="${esc(eventLink(S.links.family))}">Copier</button></div>
+      <label>${esc(people.map(p => p.name).join(' & '))} (propose des idées, sans réservations)</label><div class="copy"><span>${esc(eventLink(S.links.kids))}</span><button class="btn small" data-copy="${esc(eventLink(S.links.kids))}">Copier</button></div>
+      <p class="note">Ne partage jamais l’adresse avec <code>&amp;admin=</code> : c’est la tienne.</p></section>`;
+  }
+  $('#app').innerHTML = h;
+}
+
+/* ===================== ACTIONS ===================== */
+let pending = null;
+function addPersonRow(name = '', birthday = '') {
+  const r = document.createElement('div'); r.className = 'prow';
+  r.innerHTML = `<input class="pn" placeholder="Prénom" maxlength="40" aria-label="Prénom" value="${esc(name)}"><input class="pb" type="date" aria-label="Date de naissance" value="${esc(birthday)}">`;
+  $('#ePeople').appendChild(r);
+}
+function openEventDialog(edit) {
+  pending = { editEvent: edit };
+  $('#evDlgTitle').textContent = edit ? 'Modifier l’événement' : 'Nouvel événement';
+  $('#eTitle').value = edit ? S.event.title : ''; $('#eDate').value = edit ? S.event.date : '';
+  $('#ePeopleWrap').hidden = edit; $('#eNamesWrap').hidden = !edit;
+  if (edit) $('#eShowNames').checked = !!S.event.show_names;
+  else { $('#ePeople').innerHTML = ''; addPersonRow(); }
+  $('#dlgEvent').showModal();
+}
+document.addEventListener('click', async e => {
+  const t = e.target.closest('button'); if (!t) return;
+  const d = t.dataset;
+  if (d.close !== undefined) { t.closest('dialog').close(); return; }
+  if (d.tab) { activePerson = d.tab; render(); return; }
+  if (d.claim) {
+    pending = { gift: d.claim, mode: d.mode };
+    const g = S.gifts.find(x => x.id === pending.gift), st = giftState(g, S.claims);
+    $('#claimTitle').textContent = pending.mode === 'full' ? 'Tu offres ce cadeau' : 'Tu participes';
+    $('#claimHelp').textContent = g.title + (pending.mode === 'share' ? ' — d’autres pourront se joindre à toi.' : ' — il sera marqué comme pris.');
+    $('#claimName').value = store.get('wl_name', '');
+    $('#amountWrap').hidden = pending.mode !== 'share';
+    $('#claimAmount').value = d.topup || '';
+    $('#amountHelp').textContent = st.price != null && st.collected > 0 && st.remaining > 0 ? `Il manque ${euro(st.remaining)}.` : (st.price != null ? `Prix indicatif : ${euro(st.price)}.` : '');
+    $('#dlgClaim').showModal(); return;
+  }
+  if (d.unclaim) {
+    if (!confirm('Annuler cette réservation ?')) return;
+    try { await api.unclaim(d.unclaim); await refresh(); toast('Réservation annulée'); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (d.add || d.edit) {
+    const g = d.edit ? S.gifts.find(x => x.id === d.edit) : null;
+    pending = { gift: g?.id || null, person: g?.person_id || d.add };
+    $('#giftTitle').textContent = g ? 'Modifier le cadeau' : (S.role === 'kids' ? 'Ton idée' : 'Nouvelle idée');
+    $('#gTitle').value = g?.title || ''; $('#gUrl').value = g?.url || ''; $('#gPrice').value = g?.price ?? ''; $('#gNote').value = g?.note || '';
+    $('#gKind').checked = g?.kind === 'idea';
+    $('#gPriceLabel').textContent = $('#gKind').checked ? 'Budget approximatif en € (facultatif)' : 'Prix approximatif en € (facultatif)';
+    $('#dlgGift').showModal(); return;
+  }
+  if (d.publish) { try { await api.publish(d.publish); await refresh(); toast('Publié pour la famille'); } catch (err) { toast(err.message); } return; }
+  if (d.rmidea) { try { await api.removeIdea(d.rmidea); await refresh(); toast('Idée retirée'); } catch (err) { toast(err.message); } return; }
+  if (d.del) {
+    if (!confirm('Supprimer ce cadeau et ses réservations ?')) return;
+    try { await api.delGift(d.del); await refresh(); toast('Cadeau supprimé'); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (d.newevent !== undefined) { openEventDialog(false); return; }
+  if (d.editevent !== undefined) { openEventDialog(true); return; }
+  if (d.delevent !== undefined) {
+    if (!confirm('Supprimer cet événement, ses personnes, idées et réservations ? Action définitive.')) return;
+    try { await api.deleteEvent(); location.href = BASE + '?admin=' + encodeURIComponent(ADMIN); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (d.addperson !== undefined || d.editperson) {
+    const p = d.editperson ? S.people.find(x => x.id === d.editperson) : null;
+    pending = { person: p?.id || null };
+    $('#pDlgTitle').textContent = p ? 'Fiche de ' + p.name : 'Nouvelle personne';
+    $('#pName').value = p?.name || ''; $('#pBirthday').value = p?.birthday || ''; $('#pDelete').hidden = !p;
+    $('#dlgPerson').showModal(); return;
+  }
+  if (t.id === 'pDelete') {
+    const p = S.people.find(x => x.id === pending.person);
+    if (!confirm(`Supprimer ${p.name} et toutes ses idées et réservations ?`)) return;
+    try { await api.deletePerson(p.id); $('#dlgPerson').close(); await refresh(); toast('Personne supprimée'); } catch (err) { toast(err.message); }
+    return;
+  }
+  if (t.id === 'eAddRow') { addPersonRow(); return; }
+  if (d.copy) {
+    try { await navigator.clipboard.writeText(d.copy); toast('Lien copié'); } catch { toast('Copie impossible : sélectionne le lien'); }
+  }
+});
+
+$('#gKind').addEventListener('change', () => {
+  $('#gPriceLabel').textContent = $('#gKind').checked ? 'Budget approximatif en € (facultatif)' : 'Prix approximatif en € (facultatif)';
+});
+
+$('#fClaim').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('#claimName').value.trim(); if (!name) return;
+  const raw = $('#claimAmount').value, amount = pending.mode === 'share' && raw !== '' ? Number(raw) : null;
+  try {
+    await api.claim(pending.gift, name, pending.mode, amount);
+    store.set('wl_name', name);
+    $('#dlgClaim').close(); await refresh(); toast('C’est noté, merci ' + name + ' !');
+  } catch (err) { $('#dlgClaim').close(); toast(err.message); await refresh(true); }
+});
+
+$('#fGift').addEventListener('submit', async e => {
+  e.preventDefault();
+  const price = $('#gPrice').value === '' ? null : Number($('#gPrice').value);
+  const g = { id: pending.gift, person_id: pending.person, title: $('#gTitle').value.trim(), url: $('#gUrl').value.trim(), price, note: $('#gNote').value.trim(), kind: $('#gKind').checked ? 'idea' : 'article' };
+  try {
+    if (S.role === 'kids') { await api.addIdea(g); $('#dlgGift').close(); await refresh(); toast('Idée envoyée, elle sera validée avant publication'); }
+    else { await api.saveGift(g); $('#dlgGift').close(); await refresh(); toast('Enregistré'); }
+  } catch (err) { toast(err.message); }
+});
+
+$('#fEvent').addEventListener('submit', async e => {
+  e.preventDefault();
+  const x = { title: $('#eTitle').value.trim(), date: $('#eDate').value };
+  try {
+    if (pending.editEvent) { x.show_names = $('#eShowNames').checked; await api.updateEvent(x); $('#dlgEvent').close(); await refresh(); toast('Événement mis à jour'); }
+    else {
+      x.people = [...document.querySelectorAll('#ePeople .prow')].map(r => ({ name: r.querySelector('.pn').value.trim(), birthday: r.querySelector('.pb').value })).filter(p => p.name);
+      if (!x.people.length) { toast('Ajoute au moins une personne'); return; }
+      const slug = await api.createEvent(x); location.href = eventLink(slug, true);
+    }
+  } catch (err) { toast(err.message); }
+});
+
+$('#fPerson').addEventListener('submit', async e => {
+  e.preventDefault();
+  try {
+    await api.savePerson({ id: pending.person, name: $('#pName').value.trim(), birthday: $('#pBirthday').value });
+    $('#dlgPerson').close(); await refresh(); toast('Enregistré');
+  } catch (err) { toast(err.message); }
+});
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S) refresh(true); });
+refresh();
+</script>
+</body>
+</html>
